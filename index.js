@@ -32,14 +32,18 @@ io.sockets.on('connection', function(socket) {
         var keyInd;
         for (keyInd in keys) {
             var key = keys[keyInd];
+            if (key === 'socketId') {
+                continue;
+            }
             if (!votes.hasOwnProperty(key)) {
                 votes[key] = 0;
             }
             // Store the vote
             votes[key]++;
         }
-        // Notify everyone of the new vote totals
         console.log(votes);
+        // Notify everyone of the new vote totals, including the one that sent the vote
+        io.emit('votes', votes);
     });
 });
 
