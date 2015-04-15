@@ -35,17 +35,28 @@ io.sockets.on('connection', function(socket) {
             if (key === 'socketId') {
                 continue;
             }
-            if (!votes.hasOwnProperty(key)) {
-                votes[key] = 0;
+            if (!votes.hasOwnProperty(socket.id)) {
+                votes[socket.id] = {};
             }
             // Store the vote
-            votes[key]++;
+            votes[socket.id][key] = 1;
         }
-        console.log(votes);
-        // Notify everyone of the new vote totals, including the one that sent the vote
-        io.emit('votes', votes);
+        emitVotes();
     });
 });
+
+function emitVotes() {
+    var tally = {};
+    for (var socketId in votes) {
+        for (var voteId in votes[socketId]) {
+            tally[voteId] = tally[voteId] ? tally[voteId]+1 : 1;
+        }
+    }
+    console.log(tally);
+
+    // Notify everyone of the new vote totals, including the one that sent the vote
+    io.emit('votes', tally);
+}
 
 app.configure(function() {
 	[ 'css', 'js', 'plugin', 'lib' ].forEach(function(dir) {
