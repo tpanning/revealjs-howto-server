@@ -1,10 +1,17 @@
+var config      = require('./config.js');
 var express		= require('express');
 var fs			= require('fs');
 var io			= require('socket.io');
 var crypto		= require('crypto');
+var bodyParser  = require('body-parser');
 
 var app			= express.createServer();
 var staticDir	= express.static;
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 
 io				= io.listen(app);
 
@@ -74,6 +81,30 @@ app.get("/token", function(req,res) {
 	var rand = Math.floor(Math.random()*9999999);
 	var secret = ts.toString() + rand.toString();
 	res.send({secret: secret, socketId: createHash(secret)});
+});
+
+app.post('/sms', function(req, res) {
+    console.log('Got a POST request');
+    if (req.body.AccountSid === config.twilio.accountSid) {
+        if (!votes.hasOwnProperty(req.body.From)) {
+            votes[req.body.From] = {}
+        }
+        res.send('Received');
+        // Split on every non-alphanumeric character, so the only thing left should be alphanumeric
+        // characters (and possibly empty strings at the beginning and end).
+        var items = req.body.Body.split(/\W+/);
+        console.log('Votes: ' + items);
+        for (var i in items) {
+            var item = items[i];
+            if (item !== "") {
+                var voteKey = item.toLowerCase();
+                votes[req.body.From][voteKey] = 1;
+            }
+        }
+        emitVotes();
+    } else {
+        res.send('Rejected');
+    }
 });
 
 var createHash = function(secret) {
